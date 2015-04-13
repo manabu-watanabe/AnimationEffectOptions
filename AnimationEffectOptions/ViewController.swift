@@ -8,7 +8,7 @@
 
 import UIKit
 
-class ViewController: UIViewController, UITableViewDataSource, Option {
+class ViewController: UIViewController, UITableViewDataSource,  UITableViewDelegate, Option {
     
     var containerView: UIView!
     
@@ -17,7 +17,7 @@ class ViewController: UIViewController, UITableViewDataSource, Option {
 
     
     var selectOption: Int = -1
-    let effectnameLbl: UILabel = UILabel()
+    var effectnameCell: UITableViewCell = UITableViewCell()
     let isEffect: UISwitch = UISwitch()
     let settingList: UITableView = UITableView(frame: CGRectMake(0, 0, 0, 300), style: UITableViewStyle.Plain)
     
@@ -34,18 +34,18 @@ class ViewController: UIViewController, UITableViewDataSource, Option {
         
         
         
-        self.containerView = UIView(frame: CGRectMake(10, 10, UIScreen.mainScreen().bounds.width - 20 , UIScreen.mainScreen().bounds.height - 190))
+        self.containerView = UIView(frame: CGRectMake(10, 10, UIScreen.mainScreen().bounds.width - 20 , UIScreen.mainScreen().bounds.height - 220))
         self.containerView.backgroundColor = UIColor.grayColor()
         self.view.addSubview(self.containerView)
 
         initAnimation()
         
-        self.settingList.frame = CGRectMake(10, UIScreen.mainScreen().bounds.height - 170, self.containerView.frame.width,
-            160)
+        self.settingList.frame = CGRectMake(10, UIScreen.mainScreen().bounds.height - 200, self.containerView.frame.width,
+            180)
         self.settingList.separatorStyle = UITableViewCellSeparatorStyle.None
         self.settingList.bounces = false
-        self.settingList.allowsSelection = false
         self.settingList.dataSource = self
+        self.settingList.delegate = self
         self.settingList.registerClass(UITableViewCell.self, forCellReuseIdentifier: "cell")
         self.view.addSubview(self.settingList)
 
@@ -58,54 +58,37 @@ class ViewController: UIViewController, UITableViewDataSource, Option {
     }
     
     func tableView(tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return 3
+        return 4
     }
     
     func tableView(tableView: UITableView, cellForRowAtIndexPath indexPath: NSIndexPath) -> UITableViewCell {
         
-        var cell: UITableViewCell = tableView.dequeueReusableCellWithIdentifier("cell", forIndexPath: indexPath) as UITableViewCell
+        var cell: UITableViewCell = tableView.dequeueReusableCellWithIdentifier("cell", forIndexPath: indexPath) as! UITableViewCell
         
         
         switch indexPath.row {
         case 0:
             // Option
-            let btn: UIButton = UIButton(frame: CGRectMake(cell.contentView.frame.width - 30, 0, 30, 30))
-            btn.backgroundColor = UIColor.orangeColor()
-            btn.setTitle(">", forState: UIControlState.Normal)
-            btn.setTitleColor(UIColor.grayColor(), forState: UIControlState.Highlighted)
-            btn.addTarget(self, action: "onOptionSelect:", forControlEvents: .TouchUpInside)
-            self.view.addSubview(btn)
-            cell.contentView.addSubview(btn)
-            
-            self.effectnameLbl.text = "Effectを選択して下さい。"
-            self.effectnameLbl.sizeToFit()
-            cell.contentView.addSubview(self.effectnameLbl)
+            self.effectnameCell = cell
+            cell.accessoryType = UITableViewCellAccessoryType.DisclosureIndicator
+            cell.textLabel?.text = "Effectを選択して下さい。"
+            cell.textLabel?.textAlignment = NSTextAlignment.Center
         case 1:
             // オン・オフ
-            let effectlbl: UILabel = UILabel()
-    
-            effectlbl.text = "Effect:"
-            effectlbl.sizeToFit()
-            cell.contentView.addSubview(effectlbl)
-            
-            self.isEffect.frame.origin.x = effectlbl.frame.origin.x + effectlbl.frame.width + 10
+            cell.textLabel?.text = "Effect:"
+            self.isEffect.frame.origin.x = cell.frame.width - 10 - self.isEffect.frame.width
+            self.isEffect.frame.origin.y = (cell.frame.height / 2) - (self.isEffect.frame.height / 2)
             cell.contentView.addSubview(self.isEffect)
-            
         case 2:
-            // 実行ボタン
-            let startBtn: UIButton = UIButton(frame: CGRectMake(10, 20, 100, 40))
-            startBtn.backgroundColor = UIColor.orangeColor()
-            startBtn.setTitle("start", forState: UIControlState.Normal)
-            startBtn.setTitleColor(UIColor.grayColor(), forState: UIControlState.Highlighted)
-            startBtn.addTarget(self, action: "onAnimation:", forControlEvents: .TouchUpInside)
-            cell.contentView.addSubview(startBtn)
+            // 開始
+            cell.textLabel?.text = "Start"
+            cell.textLabel?.textAlignment = NSTextAlignment.Center
             
-            let resetbtn: UIButton = UIButton(frame: CGRectMake(200, 20, 100, 40))
-            resetbtn.backgroundColor = UIColor.orangeColor()
-            resetbtn.setTitle("Reset", forState: UIControlState.Normal)
-            resetbtn.setTitleColor(UIColor.grayColor(), forState: UIControlState.Highlighted)
-            resetbtn.addTarget(self, action: "onReset:", forControlEvents: .TouchUpInside)
-            cell.contentView.addSubview(resetbtn)
+        case 3:
+            // Reset
+            cell.textLabel?.text = "Reset"
+            cell.textLabel?.textAlignment = NSTextAlignment.Center
+            
         default:
             println("eror row")
         }
@@ -113,7 +96,7 @@ class ViewController: UIViewController, UITableViewDataSource, Option {
         return cell
     }
     
-    func onAnimation(sender: AnyObject!) {
+    func onAnimation() {
         
         switch self.selectOption + 1 {
         case 1:
@@ -165,18 +148,35 @@ class ViewController: UIViewController, UITableViewDataSource, Option {
         }
     }
     
-    func onReset(sender: AnyObject!) {
-        initAnimation()
-    }
-    
+    // オプションリストで選択された値で書き換え。
     func change(val:Int, txt: String) {
         self.selectOption = val
-        self.effectnameLbl.text = txt
-        self.effectnameLbl.sizeToFit()
+        self.effectnameCell.textLabel?.text = txt
     }
     
+    // 選択した場所で処理を変える。
+    func tableView(tableView: UITableView, didSelectRowAtIndexPath indexPath: NSIndexPath) {
+        switch indexPath.row {
+        case 0:
+            onOptionSelect()
+        case 2:
+            onAnimation()
+        case 3:
+            initAnimation()
+        default:
+            println("eror row")
+        }
+    }
 
-    func onOptionSelect(sender: AnyObject!) {
+    // スイッチがある場所は選択させたくないので、nilをかえすようにする。
+    func tableView(tableView: UITableView, willSelectRowAtIndexPath indexPath: NSIndexPath) -> NSIndexPath? {
+        if (indexPath.row == 1) {
+            return nil
+        }
+        return indexPath
+    }
+    
+    func onOptionSelect() {
         // 遷移するViewを定義する.
         let optionList: OptionListView = OptionListView()
         
@@ -188,7 +188,6 @@ class ViewController: UIViewController, UITableViewDataSource, Option {
         // Viewの移動する.
         self.presentViewController(optionList, animated: true, completion: nil)
     }
-    
     
     func initAnimation() {
         
